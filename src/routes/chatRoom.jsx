@@ -33,6 +33,7 @@ const RoomChat = () => {
   const [joined, setJoined] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joiningRoom, setJoiningRoom] = useState(false);
+  const [fileLoading, setFileLoading] = useState(false);
 
   useEffect(() => {
     if (storedRoomName && userName) {
@@ -76,6 +77,7 @@ const RoomChat = () => {
     socket.on("newMessage", (data) => {
       const { chatMessage } = data;
       console.log("New message received:", data);
+      setFileLoading(false);
 
       const decryptedMessage = CryptoJS.AES.decrypt(
         chatMessage.message,
@@ -91,7 +93,6 @@ const RoomChat = () => {
         id: chatMessage._id,
       };
 
-      // Assuming you have a userName available in your component
       dispatch(addChatMessage({ userName, message: newMessage }));
     });
 
@@ -108,7 +109,7 @@ const RoomChat = () => {
       socket.off("newMessage");
       socket.off("messageDeleted");
     };
-  }, [storedMessages, userName]); // Ensure userName is in the dependency array
+  }, [storedMessages, userName]);
 
   useEffect(() => {
     if (storedRoomName && userName) {
@@ -138,7 +139,6 @@ const RoomChat = () => {
           setJoiningRoom(false);
           if (response.status === "success") {
             localStorage.setItem("roomName", room);
-            // Dispatch with both userName and roomName
             dispatch(setRoomName({ userName, roomName: room }));
             setJoined(true);
           } else {
@@ -150,40 +150,44 @@ const RoomChat = () => {
   };
 
   const handleSendMessage = () => {
-    const reader = new FileReader();
+    if (!message && !file) return;
 
-    if (message || file) {
-      const encryptedMessage = CryptoJS.AES.encrypt(
-        message,
-        CRYPTO_SECRET_KEY
-      ).toString();
+    setFileLoading(true);
+    console.log({ fileLoading });
 
-      if (file) {
-        reader.onload = () => {
-          const fileBuffer = reader.result;
-          socket.emit("sendMessageToRoom", {
-            roomName,
-            userName,
-            message: encryptedMessage,
-            file: {
-              fileName: file.name,
-              fileBuffer: fileBuffer,
-              fileType: file.type,
-            },
-          });
-        };
-        reader.readAsArrayBuffer(file);
-      } else {
+    const encryptedMessage = CryptoJS.AES.encrypt(
+      message,
+      CRYPTO_SECRET_KEY
+    ).toString();
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const fileBuffer = reader.result;
         socket.emit("sendMessageToRoom", {
           roomName,
           userName,
           message: encryptedMessage,
+          file: {
+            fileName: file.name,
+            fileBuffer: fileBuffer,
+            fileType: file.type,
+          },
         });
-      }
-
-      setMessage("");
-      setFile(null);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      socket.emit(
+        "sendMessageToRoom",
+        { roomName, userName, message: encryptedMessage },
+        () => {
+          setFileLoading(false);
+        }
+      );
     }
+
+    setMessage("");
+    setFile(null);
   };
 
   const handleDeleteMessage = (selectedMessage) => {
@@ -193,11 +197,10 @@ const RoomChat = () => {
 
   const handleLeaveRoom = () => {
     if (roomName && userName) {
-      // Ensure roomName and userName are available
       socket.emit("leaveRoom", { roomName, userName }, (response) => {
         if (response.status === "success") {
           localStorage.removeItem("roomName");
-          dispatch(clearRoom({ userName })); // Pass the correct userName to clear the room
+          dispatch(clearRoom({ userName }));
           setJoined(false);
           setRoomNameState("");
         } else {
@@ -266,6 +269,7 @@ const RoomChat = () => {
           handleLeaveRoom={handleLeaveRoom}
           handleSendMessage={handleSendMessage}
           handleDeleteMessage={handleDeleteMessage}
+          fileLoading={fileLoading}
         />
       )}
     </Box>

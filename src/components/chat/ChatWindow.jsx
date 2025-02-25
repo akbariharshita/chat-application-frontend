@@ -3,7 +3,6 @@ import { Box, Card, Grid, Menu, MenuItem, Typography } from "@mui/material";
 
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import DownloadIcon from "@mui/icons-material/Download";
 import MenuModal from "../modal/MenuModal";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -11,6 +10,7 @@ import InputSection from "./InputSection";
 import { useDispatch, useSelector } from "react-redux";
 import { setChatTheme } from "../../store/authSlice";
 import { themes } from "../../utils/data";
+import ChatImage from "./ChatImage";
 
 const getDayLabel = (timestamp) => {
   const today = new Date();
@@ -42,6 +42,7 @@ const ChatWindow = ({
   handleLeaveRoom,
   handleSendMessage,
   handleDeleteMessage,
+  fileLoading,
 }) => {
   const dispatch = useDispatch();
   const chatTheme = useSelector(
@@ -131,7 +132,7 @@ const ChatWindow = ({
         acc[dayLabel].push(msg);
         return acc;
       }, {})
-    : {}; // Provide an empty object if chatMessages is not an array
+    : {};
 
   return (
     <Box>
@@ -188,10 +189,10 @@ const ChatWindow = ({
         <Box
           ref={chatContainerRef}
           sx={{
-            height: { xs: "calc(100vh - 140px)", md: "calc(100vh - 155px)" },
+            height: { xs: "calc(100vh - 140px)", md: "calc(100vh - 130px)" },
             overflowY: "scroll",
-            p: 2,
-            mb: 3,
+            px: 2,
+            pt: 2,
           }}
         >
           {Object.keys(groupedMessages).map((day, dayIndex) => (
@@ -250,7 +251,7 @@ const ChatWindow = ({
                           : theme.reciveBoxColor,
                         color: "white",
                         maxWidth: "70%",
-                        minWidth: "30%",
+                        minWidth: "auto",
                         wordWrap: "break-word",
                         alignSelf: sender ? "flex-end" : "flex-start",
                         position: "relative",
@@ -306,57 +307,7 @@ const ChatWindow = ({
                           </Typography>
                         )
                       ) : msg.file ? (
-                        <>
-                          <Box
-                            sx={{
-                              position: "relative",
-                              display: "inline-block",
-                            }}
-                          >
-                            <img
-                              src={msg.file}
-                              alt="Received File"
-                              style={{
-                                width: "100%",
-                                borderRadius: "10px",
-                                maxHeight: "200px",
-                                objectFit: "cover",
-                                filter: !sender ? "blur(2px)" : "blur(0px)",
-                              }}
-                            />
-                            {!sender && (
-                              <Box
-                                sx={{
-                                  position: "absolute",
-                                  display: "flex",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  top: "10px",
-                                  right: "10px",
-                                  backgroundColor: "rgba(225, 225, 225, 0.4)",
-                                  width: "50px",
-                                  borderRadius: "50%",
-                                  padding: "6px",
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => window.open(msg.file, "_blank")}
-                              >
-                                <DownloadIcon
-                                  sx={{ color: "white", fontSize: 18 }}
-                                />
-                              </Box>
-                            )}
-                          </Box>
-                          <Typography
-                            sx={{
-                              textAlign: "start",
-                              fontSize: "10px",
-                              lineHeight: "8px",
-                            }}
-                          >
-                            {msg.message}
-                          </Typography>
-                        </>
+                        <ChatImage msg={msg} sender={sender} />
                       ) : (
                         <Typography
                           sx={{
@@ -372,6 +323,8 @@ const ChatWindow = ({
                       <Typography
                         textAlign="right"
                         fontSize="7px"
+                        pt="3px"
+                        pl="25px"
                         color={sender ? "#504747" : "#8b938b"}
                       >
                         {time}

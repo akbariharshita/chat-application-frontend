@@ -55,7 +55,7 @@ const Login = () => {
         sx={{
           bgcolor: "white",
           borderRadius: "50px",
-          width: "100%",
+          width: { xs: "100%", md: "50%" },
           py: "50px",
           px: "20px",
           textAlign: "center",
