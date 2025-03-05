@@ -1,33 +1,9 @@
-import { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 
-const ChatImage = ({ msg, sender }) => {
-  const [isDownloaded, setIsDownloaded] = useState(false);
-
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(msg.file);
-      console.log({ response });
-      const blob = await response.blob();
-      console.log({ blob });
-      const url = URL.createObjectURL(blob);
-      console.log({ url });
-
-      // Create an anchor tag to trigger download
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "downloaded_image.jpg"; // Set file name
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // Set downloaded state to true
-      setIsDownloaded(true);
-    } catch (error) {
-      console.error("Error downloading the image:", error);
-    }
+const ChatImage = ({ msg, sender, handleDownload }) => {
+  const handleDownloadFile = () => {
+    handleDownload(msg);
   };
 
   return (
@@ -41,10 +17,10 @@ const ChatImage = ({ msg, sender }) => {
             borderRadius: "10px",
             maxHeight: "200px",
             objectFit: "cover",
-            filter: !sender && !isDownloaded ? "blur(10px)" : "blur(0px)",
+            filter: !sender && !msg.isDownload ? "blur(10px)" : "blur(0px)",
           }}
         />
-        {!sender && !isDownloaded && (
+        {!sender && !msg.isDownload && (
           <Box
             sx={{
               position: "absolute",
@@ -59,7 +35,7 @@ const ChatImage = ({ msg, sender }) => {
               padding: "6px",
               cursor: "pointer",
             }}
-            onClick={handleDownload}
+            onClick={handleDownloadFile}
           >
             <DownloadIcon sx={{ color: "white", fontSize: 18 }} />
           </Box>

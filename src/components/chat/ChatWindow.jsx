@@ -42,6 +42,7 @@ const ChatWindow = ({
   handleLeaveRoom,
   handleSendMessage,
   handleDeleteMessage,
+  handleDownload,
   fileLoading,
 }) => {
   const dispatch = useDispatch();
@@ -307,7 +308,12 @@ const ChatWindow = ({
                           </Typography>
                         )
                       ) : msg.file ? (
-                        <ChatImage msg={msg} sender={sender} />
+                        <ChatImage
+                          msg={msg}
+                          sender={sender}
+                          userName={userName}
+                          handleDownload={handleDownload}
+                        />
                       ) : (
                         <Typography
                           sx={{

@@ -12,9 +12,10 @@ import {
   setChatMessages,
   addChatMessage,
   deleteChatMessage,
+  setFileDownloaded,
 } from "../store/authSlice";
 
-const socket = io(BACKEND_URL);
+export const socket = io(BACKEND_URL);
 const availableRooms = ["Room 1", "Room 2", "Room 3"];
 
 const RoomChat = () => {
@@ -66,11 +67,11 @@ const RoomChat = () => {
           message: decryptedMessage,
           timestamp: msg.timestamp,
           isDeleted: msg.isDeleted,
+          isDownload: msg.isDownload,
           id: msg._id,
         };
       });
 
-      // Dispatch with userName and chatMessages
       dispatch(setChatMessages({ userName, chatMessages: decryptedMessages }));
     });
 
@@ -90,6 +91,7 @@ const RoomChat = () => {
         message: decryptedMessage,
         timestamp: chatMessage.timestamp,
         isDeleted: chatMessage.isDeleted,
+        isDownload: chatMessage.isDownload,
         id: chatMessage._id,
       };
 
@@ -97,9 +99,13 @@ const RoomChat = () => {
     });
 
     socket.on("messageDeleted", ({ MessageId }) => {
+      dispatch(deleteChatMessage({ userName, messageId: MessageId }));
+    });
+
+    socket.on("fileDownload", ({ MessageId }) => {
       setChatMessages((prevMessages) =>
         prevMessages.map((message) =>
-          message.id === MessageId ? { ...message, isDeleted: true } : message
+          message.id === MessageId ? { ...message, isDownload: true } : message
         )
       );
     });
@@ -108,6 +114,7 @@ const RoomChat = () => {
       socket.off("roomMessage");
       socket.off("newMessage");
       socket.off("messageDeleted");
+      socket.off("fileDownload");
     };
   }, [storedMessages, userName]);
 
@@ -153,7 +160,6 @@ const RoomChat = () => {
     if (!message && !file) return;
 
     setFileLoading(true);
-    console.log({ fileLoading });
 
     const encryptedMessage = CryptoJS.AES.encrypt(
       message,
@@ -193,6 +199,27 @@ const RoomChat = () => {
   const handleDeleteMessage = (selectedMessage) => {
     socket.emit("deleteMessage", { roomName, messageId: selectedMessage.id });
     dispatch(deleteChatMessage({ userName, messageId: selectedMessage.id }));
+  };
+
+  const handleDownload = async (msg) => {
+    try {
+      const response = await fetch(msg.file);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "downloaded_image.jpg";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      socket.emit("downloadFile", { roomName, messageId: msg.id });
+      dispatch(setFileDownloaded({ userName, messageId: msg.id }));
+    } catch (error) {
+      console.error("Error downloading the image:", error);
+    }
   };
 
   const handleLeaveRoom = () => {
@@ -269,6 +296,7 @@ const RoomChat = () => {
           handleLeaveRoom={handleLeaveRoom}
           handleSendMessage={handleSendMessage}
           handleDeleteMessage={handleDeleteMessage}
+          handleDownload={handleDownload}
           fileLoading={fileLoading}
         />
       )}

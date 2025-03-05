@@ -18,14 +18,13 @@ const Login = () => {
       setEmail("");
       setPassword("");
 
-      // Assuming 'userName' is part of the login response
       const { userName, accessToken, refreshToken } = data;
 
       dispatch(
         setToken({
-          userName, // Use the userName as a unique identifier
-          accessToken, // Store the access token
-          refreshToken, // Store the refresh token
+          userName,
+          accessToken,
+          refreshToken,
         })
       );
     },

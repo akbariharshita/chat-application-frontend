@@ -11,7 +11,6 @@ export const authSlice = createSlice({
   reducers: {
     setToken: (state, action) => {
       const { userName, accessToken, refreshToken } = action.payload;
-      console.log({ userName, accessToken, refreshToken });
       state.userName = userName;
 
       state.users[userName] = {
@@ -22,7 +21,6 @@ export const authSlice = createSlice({
         chatMessages: [],
         chatTheme: {},
       };
-      console.log(state.users);
     },
 
     setRoomName: (state, action) => {
@@ -69,12 +67,22 @@ export const authSlice = createSlice({
     },
 
     deleteChatMessage: (state, action) => {
+      const { messageId } = action.payload;
+
+      Object.keys(state.users).forEach((user) => {
+        state.users[user].chatMessages = state.users[user].chatMessages.map(
+          (msg) => (msg.id === messageId ? { ...msg, isDeleted: true } : msg)
+        );
+      });
+    },
+
+    setFileDownloaded: (state, action) => {
       const { userName, messageId } = action.payload;
       if (state.users[userName]) {
         state.users[userName].chatMessages = state.users[
           userName
         ].chatMessages.map((msg) =>
-          msg.id === messageId ? { ...msg, isDeleted: true } : msg
+          msg.id === messageId ? { ...msg, isDownload: true } : msg
         );
       }
     },
@@ -117,6 +125,7 @@ export const {
   setChatTheme,
   logout,
   logoutAll,
+  setFileDownloaded,
 } = authSlice.actions;
 
 export default authSlice.reducer;
